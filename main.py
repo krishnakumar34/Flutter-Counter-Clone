@@ -1,46 +1,73 @@
-import flet as ft
+import logging
+import youtube_dl
+
+from flask import Flask, request, jsonify
+
+app = Flask(__name__)
 
 
-def main(page: ft.Page):
-    # the title of the app
-    page.title = "Flet Counter App"
+@app.route('/hello/<url>')
+def hello(url):
+    print("hello" +str(url))
+    urlk= str(url)
+    from pytube import YouTube
+    url='https://www.youtube.com/watch?v='+str(urlk)
+    yt=YouTube(url)
+    return yt.streams.get_highest_resolution().url
 
-    # a light/bright theme
-    page.theme_mode = "light"
 
-    # the page's alignment
-    page.horizontal_alignment = ft.CrossAxisAlignment.CENTER
-    page.vertical_alignment = ft.MainAxisAlignment.CENTER
 
-    def increment_counter(e):
-        """Increment the value of the counter_text object by 1, and update the UI to reflect these changes."""
-        counter_text.value = str(int(counter_text.value) + 1)
-        page.update()
 
-    # the app's appbar
-    page.appbar = ft.AppBar(
-        title=ft.Text("Flet Demo Home Page", color=ft.colors.WHITE),  # a title of white color
-        bgcolor=ft.colors.BLUE,  # a blue background color
-        center_title=True  # center the title || without this, the title will be on the left
+@app.route('/einthu/<id>')
+def einthu(id):
+  
+  v=str(id)
+  ydl = youtube_dl.YoutubeDL({'outtmpl': 
+ '%(id)s.%(ext)s'})
+  with ydl:
+    result = ydl.extract_info(       'https://einthusan.tv/movie/watch/'+str(v),
+        download=False # We just want to extract the info
     )
+    if 'entries' in result:
+    # Can be a playlist or a list of videos
+      video = result['entries'][0]
+    else:
+    # Just a video
+      video = result
 
-    # text that contains the counter number to be incremented
-    counter_text = ft.Text("0", size=64)
+    print(video['url'])
+    return video['url']
 
-    # the app's FAB
-    page.floating_action_button = ft.FloatingActionButton(
-        content=ft.Icon(ft.icons.ADD, color=ft.colors.WHITE),
-        shape=ft.CircleBorder(),  # gives the button a round/circle shape
-        on_click=increment_counter,  # the callback to be executed when this button is clicked
-        tooltip="Increment",  # the text to be shown when this button is hovered
-        bgcolor=ft.colors.BLUE  # a blue background color
+@app.route('/songs/<id>')
+def songs(id):
+  
+  v=str(id)
+  t="https://einthusan.tv/movie-clip/watch/music-video/"+str(v)
+  print(t)
+  ydl = youtube_dl.YoutubeDL({'outtmpl': 
+ '%(id)s.%(ext)s'})
+  with ydl:
+    result = ydl.extract_info(       'https://einthusan.tv/movie-clip/watch/music-video/'+str(v),
+        download=False # We just want to extract the info
     )
+    if 'entries' in result:
+    # Can be a playlist or a list of videos
+      video = result['entries'][0]
+    else:
+    # Just a video
+      video = result
 
-    # adding our widgets/controls to the page/UI
-    page.add(
-        ft.Text("You have pushed the button this many times:"),
-        counter_text
-    )
+    print(video['url'])
+    return video['url']
 
 
-ft.app(target=main, view=ft.AppView.WEB_BROWSER)
+@app.errorhandler(500)
+def server_error(e):
+    logging.exception('An error occurred during a request.')
+    return """
+    An internal error occurred: <pre>{}</pre>
+    See logs for full stacktrace.
+    """.format(e), 500
+
+if __name__ == '__app__':
+    app.run(host='0.0.0.0', port=8080)  
